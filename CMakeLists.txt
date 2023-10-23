@@ -85,7 +85,7 @@ if(WITH_THRIFT)
     find_package(Thrift CONFIG REQUIRED)
 endif(WITH_THRIFT)
 
-target_link_libraries(MaaCore ${OpenCV_LIBS} MaaFramework MaaToolKit MaaDerpLearning asio::asio ZLIB::ZLIB ONNXRuntime::ONNXRuntime cpr::cpr header_only_libraries)
+target_link_libraries(MaaCore ${OpenCV_LIBS} MaaDerpLearning asio::asio ZLIB::ZLIB ONNXRuntime::ONNXRuntime cpr::cpr header_only_libraries)
 
 if(WITH_THRIFT)
     add_subdirectory(src/MaaThriftController)
@@ -134,6 +134,8 @@ if (WIN32)
 else ()
     link_directories(${PROJECT_SOURCE_DIR}/deps/bin)
 endif ()
+
+target_link_libraries(MaaCore MaaFramework MaaToolKit)
 
 # define MAA_VERSION from git
 if (NOT DEFINED MAA_VERSION)
