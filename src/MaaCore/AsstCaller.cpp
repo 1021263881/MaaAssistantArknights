@@ -13,8 +13,8 @@
 #include "Utils/Logger.hpp"
 #include "Utils/WorkingDir.hpp"
 
-#include <MaaFramework/MaaAPI.h>
-#include <MaaToolKit/MaaToolKitAPI.h>
+#include "MaaFramework/MaaAPI.h"
+#include "MaaToolKit/MaaToolKitAPI.h"
 
 static constexpr AsstSize NullSize = static_cast<AsstSize>(-1);
 static constexpr AsstId InvalidId = 0;
