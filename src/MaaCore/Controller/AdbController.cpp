@@ -19,6 +19,8 @@
 #include "Utils/Logger.hpp"
 #include "Utils/StringMisc.hpp"
 
+#include <MaaFramework/Instance/MaaController.h>
+
 asst::AdbController::AdbController(const AsstCallback& callback, Assistant* inst, PlatformType type)
     : InstHelper(inst), m_callback(callback)
 {
@@ -319,7 +321,7 @@ bool asst::AdbController::convert_lf(std::string& data)
     data.erase(next_iter, data.end());
     return true;
 }
-
+// 截图部分
 bool asst::AdbController::screencap(cv::Mat& image_payload, bool allow_reconnect)
 {
     DecodeFunc decode_raw = [&](const std::string& data) -> bool {

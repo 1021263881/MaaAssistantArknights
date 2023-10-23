@@ -19,6 +19,7 @@ option(WITH_THRIFT "build with thrift" OFF)
 
 include(${PROJECT_SOURCE_DIR}/cmake/utils.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/thrift-gen.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/framework.cmake)
 
 if(USE_MAADEPS)
     include(${PROJECT_SOURCE_DIR}/MaaDeps/maadeps.cmake)
@@ -38,7 +39,6 @@ else ()
         add_compile_options("-Wno-restrict")
     endif()
 endif ()
-
 
 add_library(header_only_libraries INTERFACE)
 target_include_directories(header_only_libraries INTERFACE 3rdparty/include)
@@ -85,7 +85,7 @@ if(WITH_THRIFT)
     find_package(Thrift CONFIG REQUIRED)
 endif(WITH_THRIFT)
 
-target_link_libraries(MaaCore ${OpenCV_LIBS} MaaDerpLearning asio::asio ZLIB::ZLIB ONNXRuntime::ONNXRuntime cpr::cpr header_only_libraries)
+target_link_libraries(MaaCore ${OpenCV_LIBS} MaaFramework MaaToolKit MaaDerpLearning asio::asio ZLIB::ZLIB ONNXRuntime::ONNXRuntime cpr::cpr header_only_libraries)
 
 if(WITH_THRIFT)
     add_subdirectory(src/MaaThriftController)
@@ -127,6 +127,13 @@ endif (INSTALL_RESOURCE)
 if (APPLE)
     include(${PROJECT_SOURCE_DIR}/cmake/macos.cmake)
 endif (APPLE)
+
+include_directories(${PROJECT_SOURCE_DIR}/deps/include)
+if (WIN32)
+    link_directories(${PROJECT_SOURCE_DIR}/deps/lib)
+else ()
+    link_directories(${PROJECT_SOURCE_DIR}/deps/bin)
+endif ()
 
 # define MAA_VERSION from git
 if (NOT DEFINED MAA_VERSION)

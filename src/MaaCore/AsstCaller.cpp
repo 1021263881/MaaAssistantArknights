@@ -13,6 +13,9 @@
 #include "Utils/Logger.hpp"
 #include "Utils/WorkingDir.hpp"
 
+#include <MaaFramework/MaaAPI.h>
+#include <MaaToolKit/MaaToolKitAPI.h>
+
 static constexpr AsstSize NullSize = static_cast<AsstSize>(-1);
 static constexpr AsstId InvalidId = 0;
 static constexpr AsstBool AsstTrue = 1;
@@ -110,6 +113,26 @@ AsstBool AsstSetInstanceOption(AsstHandle handle, AsstInstanceOptionKey key, con
 
 AsstBool AsstConnect(AsstHandle handle, const char* adb_path, const char* address, const char* config)
 {
+    MaaToolKitInit();
+    auto device_size = MaaToolKitFindDevice();
+    if (device_size == 0) {
+        std::cout << "No device found" << std::endl;
+        return false;
+    }
+
+    auto agent_path = asst::utils::path("MaaAgentBinary");
+
+    const int kIndex = 0; // for demo, we just use the first device
+    auto controller_handle =
+        MaaAdbControllerCreateV2(MaaToolKitGetDeviceAdbPath(kIndex), MaaToolKitGetDeviceAdbSerial(kIndex),
+                                 MaaToolKitGetDeviceAdbControllerType(kIndex), MaaToolKitGetDeviceAdbConfig(kIndex),
+                                 agent_path.string().c_str(), nullptr, nullptr);
+    auto ctrl_id = MaaControllerPostConnection(controller_handle);
+    MaaControllerWait(controller_handle, ctrl_id);
+
+    MaaControllerDestroy(controller_handle);
+    MaaToolKitUninit();
+
     if (!inited() || handle == nullptr) {
         asst::Log.error(__FUNCTION__, "Cannot connect to device, asst not inited or handle is null", inited(), handle);
         return AsstFalse;
