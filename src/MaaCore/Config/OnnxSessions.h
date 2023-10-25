@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <onnxruntime/onnxruntime_cxx_api.h>
 
 namespace asst
 {

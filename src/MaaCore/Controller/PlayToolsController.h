@@ -3,8 +3,8 @@
 #include "ControllerAPI.h"
 #include "MinitouchController.h"
 
-#include <asio/io_context.hpp>
-#include <asio/ip/tcp.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #include "Platform/PlatformFactory.h"
 
@@ -50,8 +50,8 @@ namespace asst
     protected:
         AsstCallback m_callback;
 
-        asio::io_context m_context;
-        asio::ip::tcp::socket m_socket;
+        boost::asio::io_context m_context;
+        boost::asio::ip::tcp::socket m_socket;
 
         std::string m_address;
         std::pair<int, int> m_screen_size = { 0, 0 };

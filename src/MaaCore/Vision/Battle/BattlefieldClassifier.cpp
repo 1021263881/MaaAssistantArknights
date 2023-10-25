@@ -6,7 +6,7 @@
 #include <array>
 #include <cmath>
 
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <onnxruntime/onnxruntime_cxx_api.h>
 
 #include "Config/OnnxSessions.h"
 #include "Config/TaskData.h"

@@ -30,6 +30,9 @@
 #include "Task/Interface/DebugTask.h"
 #endif
 
+#include <MaaFramework/MaaAPI.h>
+#include <MaaToolKit/MaaToolKitAPI.h>
+
 using namespace asst;
 
 bool ::AsstExtAPI::set_static_option(StaticOptionKey key, const std::string& value)
@@ -165,6 +168,26 @@ bool asst::Assistant::set_instance_option(InstanceOptionKey key, const std::stri
 bool asst::Assistant::ctrl_connect(const std::string& adb_path, const std::string& address, const std::string& config)
 {
     LogTraceFunction;
+
+    MaaToolKitInit();
+    auto device_size = MaaToolKitFindDevice();
+    if (device_size == 0) {
+        std::cout << "No device found" << std::endl;
+        return false;
+    }
+
+    auto agent_path = asst::utils::path("MaaAgentBinary");
+
+    const int kIndex = 0; // for demo, we just use the first device
+    auto controller_handle =
+        MaaAdbControllerCreateV2(MaaToolKitGetDeviceAdbPath(kIndex), MaaToolKitGetDeviceAdbSerial(kIndex),
+                                 MaaToolKitGetDeviceAdbControllerType(kIndex), MaaToolKitGetDeviceAdbConfig(kIndex),
+                                 agent_path.string().c_str(), nullptr, nullptr);
+    auto ctrl_id = MaaControllerPostConnection(controller_handle);
+    MaaControllerWait(controller_handle, ctrl_id);
+
+    MaaControllerDestroy(controller_handle);
+    MaaToolKitUninit();
 
     std::unique_lock<std::mutex> lock(m_mutex);
 
