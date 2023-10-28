@@ -30,9 +30,6 @@
 #include "Task/Interface/DebugTask.h"
 #endif
 
-#include <MaaFramework/MaaAPI.h>
-#include <MaaToolKit/MaaToolKitAPI.h>
-
 using namespace asst;
 
 bool ::AsstExtAPI::set_static_option(StaticOptionKey key, const std::string& value)
@@ -169,26 +166,6 @@ bool asst::Assistant::ctrl_connect(const std::string& adb_path, const std::strin
 {
     LogTraceFunction;
 
-    MaaToolKitInit();
-    auto device_size = MaaToolKitFindDevice();
-    if (device_size == 0) {
-        std::cout << "No device found" << std::endl;
-        return false;
-    }
-
-    auto agent_path = asst::utils::path("MaaAgentBinary");
-
-    const int kIndex = 0; // for demo, we just use the first device
-    auto controller_handle =
-        MaaAdbControllerCreateV2(MaaToolKitGetDeviceAdbPath(kIndex), MaaToolKitGetDeviceAdbSerial(kIndex),
-                                 MaaToolKitGetDeviceAdbControllerType(kIndex), MaaToolKitGetDeviceAdbConfig(kIndex),
-                                 agent_path.string().c_str(), nullptr, nullptr);
-    auto ctrl_id = MaaControllerPostConnection(controller_handle);
-    MaaControllerWait(controller_handle, ctrl_id);
-
-    MaaControllerDestroy(controller_handle);
-    MaaToolKitUninit();
-
     std::unique_lock<std::mutex> lock(m_mutex);
 
     // 仍有任务进行，connect 前需要 stop
@@ -209,6 +186,7 @@ bool asst::Assistant::ctrl_connect(const std::string& adb_path, const std::strin
 
 bool asst::Assistant::ctrl_click(int x, int y)
 {
+    // 未处理缩放的原始坐标
     return m_ctrler->click(Point(x, y));
 }
 

@@ -3,7 +3,7 @@
 
 #include "protocol.hpp"
 
-using asio::ip::tcp;
+using boost::asio::ip::tcp;
 
 namespace adb::protocol
 {
@@ -29,7 +29,7 @@ namespace adb::protocol
     static inline bool host_response(tcp::socket& socket, std::string& failure)
     {
         std::array<char, 4> header;
-        socket.read_some(asio::buffer(header));
+        socket.read_some(boost::asio::buffer(header));
         const auto result = std::string_view(header.data(), 4);
         if (result == "OKAY") {
             return true;
@@ -47,13 +47,13 @@ namespace adb::protocol
     std::string host_message(tcp::socket& socket)
     {
         std::array<char, 4> header;
-        socket.read_some(asio::buffer(header));
+        socket.read_some(boost::asio::buffer(header));
         auto remain = std::stoull(std::string(header.data(), 4), nullptr, 16);
 
         std::string message;
         std::array<char, 1024> buffer;
         while (remain > 0) {
-            const auto length = socket.read_some(asio::buffer(buffer));
+            const auto length = socket.read_some(boost::asio::buffer(buffer));
             message.append(buffer.data(), length);
             remain -= length;
         }
@@ -61,18 +61,19 @@ namespace adb::protocol
         return message;
     }
 
-    std::string host_data(tcp::socket& socket)
+    std::string host_data([[maybe_unused]]tcp::socket& socket)
     {
         std::string data;
-        std::array<char, 1024> buffer;
-        asio::error_code ec;
+        [[maybe_unused]] std::array<char, 1024> buffer;
+        std::error_code ec;
 
         while (!ec) {
-            const auto length = socket.read_some(asio::buffer(buffer), ec);
-            if (ec == asio::error::eof) {
+            /*
+            const auto length = socket.read_some(boost::asio::buffer(buffer), ec);
+            if (ec == boost::asio::error::eof) {
                 break;
             }
-            data.append(buffer.data(), length);
+            data.append(buffer.data(), length);*/
         }
 
         return data;
@@ -93,7 +94,7 @@ namespace adb::protocol
     void sync_response(tcp::socket& socket, std::string& id, uint32_t& length)
     {
         std::array<char, 8> response;
-        socket.read_some(asio::buffer(response));
+        socket.read_some(boost::asio::buffer(response));
 
         id = std::string(response.data(), 4);
         length = response[4] | (response[5] << 8) | (response[6] << 16) | (response[7] << 24);
@@ -101,7 +102,7 @@ namespace adb::protocol
 
     void send_host_request(tcp::socket& socket, const std::string_view request)
     {
-        socket.write_some(asio::buffer(protocol::host_request(request)));
+        socket.write_some(boost::asio::buffer(protocol::host_request(request)));
         std::string failure;
         if (!protocol::host_response(socket, failure)) {
             throw std::runtime_error(failure);
@@ -111,7 +112,7 @@ namespace adb::protocol
     void send_sync_request(tcp::socket& socket, const std::string_view id, uint32_t length, const char* body)
     {
         auto data_request = protocol::sync_request(id, length);
-        socket.write_some(asio::buffer(data_request));
-        socket.write_some(asio::buffer(body, length));
+        socket.write_some(boost::asio::buffer(data_request));
+        socket.write_some(boost::asio::buffer(body, length));
     }
 } // namespace adb::protocol

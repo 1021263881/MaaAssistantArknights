@@ -115,10 +115,11 @@ namespace adb
                 ec = error;
                 return;
             }
-            m_socket.cancel(ec);
+            // m_socket.cancel(ec);
         });
 
         m_context->restart();
+        /*
         while (m_context->run_one()) {
             if (ec == boost::asio::error::eof) {
                 break;
@@ -129,7 +130,7 @@ namespace adb
             else if (ec) {
                 throw std::system_error(ec);
             }
-        }
+        }*/
 
         return std::string(buffer.data(), bytes_read);
     }

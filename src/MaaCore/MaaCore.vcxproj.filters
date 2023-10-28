@@ -534,12 +534,6 @@
     <ClInclude Include="Controller\Controller.h">
       <Filter>Source\Controller</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\adb-lite\client.hpp">
-      <Filter>Source\Controller\adb-lite</Filter>
-    </ClInclude>
-    <ClInclude Include="Controller\adb-lite\protocol.hpp">
-      <Filter>Source\Controller\adb-lite</Filter>
-    </ClInclude>
     <ClInclude Include="Controller\ControllerAPI.h">
       <Filter>Source\Controller</Filter>
     </ClInclude>
@@ -657,6 +651,11 @@
     <ClInclude Include="Task\Miscellaneous\ScreenshotTaskPlugin.h">
       <Filter>Source\Task\Miscellaneous</Filter>
     </ClInclude>
+    <ClInclude Include="Controller\MaaAdbController.h">
+      <Filter>Source\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\adb-lite\client.hpp" />
+    <ClInclude Include="Controller\adb-lite\protocol.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vision\VisionHelper.cpp">
@@ -989,12 +988,6 @@
     <ClCompile Include="Controller\Controller.cpp">
       <Filter>Source\Controller</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\adb-lite\client.cpp">
-      <Filter>Source\Controller\adb-lite</Filter>
-    </ClCompile>
-    <ClCompile Include="Controller\adb-lite\protocol.cpp">
-      <Filter>Source\Controller\adb-lite</Filter>
-    </ClCompile>
     <ClCompile Include="Controller\MaaThriftController.cpp">
       <Filter>Source\Controller</Filter>
     </ClCompile>
@@ -1091,5 +1084,11 @@
     <ClCompile Include="Task\Miscellaneous\ScreenshotTaskPlugin.cpp">
       <Filter>Source\Task\Miscellaneous</Filter>
     </ClCompile>
+    <ClCompile Include="Controller\MaaThriftController.h" />
+    <ClCompile Include="Controller\MaaAdbController.cpp">
+      <Filter>Source\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller\adb-lite\client.cpp" />
+    <ClCompile Include="Controller\adb-lite\protocol.cpp" />
   </ItemGroup>
 </Project>

@@ -54,7 +54,11 @@
     <ClInclude Include="Controller\ControllerAPI.h" />
     <ClInclude Include="Controller\ControllerFactory.h" />
     <ClInclude Include="Controller\ControlScaleProxy.h" />
+    <ClCompile Include="Controller\adb-lite\client.cpp" />
+    <ClCompile Include="Controller\adb-lite\protocol.cpp" />
+    <ClCompile Include="Controller\MaaAdbController.cpp" />
     <ClCompile Include="Controller\MaaThriftController.h" />
+    <ClInclude Include="Controller\MaaAdbController.h" />
     <ClInclude Include="Controller\MaatouchController.h" />
     <ClInclude Include="Controller\MinitouchController.h" />
     <ClInclude Include="Controller\PlayToolsController.h" />
@@ -222,8 +226,6 @@
     <ClCompile Include="Config\Miscellaneous\OcrConfig.cpp" />
     <ClCompile Include="Config\Miscellaneous\SSSCopilotConfig.cpp" />
     <ClCompile Include="Config\OnnxSessions.cpp" />
-    <ClCompile Include="Controller\adb-lite\client.cpp" />
-    <ClCompile Include="Controller\adb-lite\protocol.cpp" />
     <ClCompile Include="Controller\Controller.cpp" />
     <ClCompile Include="Controller\ControlScaleProxy.cpp" />
     <ClCompile Include="Controller\MaaThriftController.cpp" />
@@ -451,7 +453,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\3rdparty\include</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\3rdparty\include;$(ProjectDir)..\..\deps\include</IncludePath>
     <LibraryPath>$(TargetDir);$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\..\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -495,7 +497,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>MaaControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;MaaDerpLearning.lib;opencv_world4.lib;zlib.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MaaAdbControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;fastdeploy_ppocr.lib;opencv_world4.lib;zlib.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <Profile>true</Profile>
       <AdditionalOptions>/ignore:4286 %(AdditionalOptions)</AdditionalOptions>
@@ -506,8 +508,9 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /y /d "$(ProjectDir)..\..\deps\bin" "$(OutDir)"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\MaaAgentBinary" "$(OutDir)MaaAgentBinary\"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\resource" "$(OutDir)resource\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -594,7 +597,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>MaaControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;MaaDerpLearning.lib;opencv_world4.lib;zlib.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MaaAdbControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;fastdeploy_ppocr.lib;opencv_world4.lib;zlib.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <Profile>true</Profile>
       <AdditionalOptions>/ignore:4286 %(AdditionalOptions)</AdditionalOptions>
@@ -605,8 +608,9 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /y /d "$(ProjectDir)..\..\deps\bin" "$(OutDir)"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\MaaAgentBinary" "$(OutDir)MaaAgentBinary\"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\resource" "$(OutDir)resource\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -649,7 +653,7 @@
       <OptimizeReferences>
       </OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>MaaControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;MaaDerpLearning.lib;opencv_world4d.lib;zlibd.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl-d.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MaaAdbControlUnit.lib;MaaFramework.lib;MaaRpc.lib;MaaToolKit.lib;MaaUtils.lib;fastdeploy_ppocr.lib;opencv_world4d.lib;zlibd.lib;ws2_32.lib;onnxruntime.lib;cpr.lib;libcurl-d.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <Profile>
       </Profile>
@@ -661,8 +665,9 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /y /d "$(ProjectDir)..\..\deps\bin" "$(OutDir)"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\MaaAgentBinary" "$(OutDir)MaaAgentBinary\"
+xcopy /s /y /d "$(ProjectDir)..\..\deps\share\resource" "$(OutDir)resource\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>

@@ -192,8 +192,8 @@ void asst::PlayToolsController::close()
     m_screen_size = { 0, 0 };
 
     if (m_socket.is_open()) {
-        m_socket.shutdown(tcp::socket::shutdown_both, ec);
-        m_socket.close(ec);
+        //m_socket.shutdown(tcp::socket::shutdown_both, ec);
+        //m_socket.close(ec);
     }
 }
 
