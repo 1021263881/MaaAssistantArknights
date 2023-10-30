@@ -38,6 +38,20 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
 {
     LogTraceFunction;
 
+    auto mode = m_config->get_mode();
+    bool bought = false;
+    if ((mode == RoguelikeMode::Investment) || shopping(bought)) {
+        if (!bought) {
+            // 如果什么都没买，即使有商品，说明也是不需要买的，这里强制离开商店，后面让 ProcessTask 继续跑
+            return ProcessTask(*this, { "RoguelikeTraderShoppingOver" }).run();
+        }
+    }
+
+    return true;
+}
+
+bool asst::RoguelikeShoppingTaskPlugin::shopping(bool& bought)
+{
     OCRer analyzer;
     analyzer.set_task_info("RoguelikeTraderShoppingOcr");
     auto image = ctrler()->get_image();
@@ -100,7 +114,6 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
         }
     }
 
-    bool bought = false;
     auto& all_goods = RoguelikeShopping.get_goods(m_config->get_theme());
     std::vector<std::string> all_foldartal = m_config->get_theme() == RoguelikeTheme::Sami
                                                  ? Task.get<OcrTaskInfo>("Sami@Roguelike@FoldartalGainOcr")->text
@@ -182,11 +195,5 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
         }
         break;
     }
-
-    if (!bought) {
-        // 如果什么都没买，即使有商品，说明也是不需要买的，这里强制离开商店，后面让 ProcessTask 继续跑
-        return ProcessTask(*this, { "RoguelikeTraderShoppingOver" }).run();
-    }
-
     return true;
 }
