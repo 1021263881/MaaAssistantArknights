@@ -3,7 +3,7 @@
 // Copyright (C) 2021 MistEO and Contributors
 //
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License v3.0 only as published by
 // the Free Software Foundation, either version 3 of the License, or
 // any later version.
 //
@@ -37,13 +37,13 @@ namespace MaaWpfGui.Services.Web
         {
             get
             {
-                var p = ConfigurationHelper.GetValue(ConfigurationKeys.UpdateProxy, string.Empty);
-                if (string.IsNullOrEmpty(p))
+                var proxy = SettingsViewModel.VersionUpdateSettings.Proxy;
+                if (string.IsNullOrEmpty(proxy))
                 {
                     return string.Empty;
                 }
 
-                return p.Contains("://") ? p : $"http://{p}";
+                return proxy.Contains("://") ? proxy : SettingsViewModel.VersionUpdateSettings.ProxyType + $"://{proxy}";
             }
         }
 
@@ -81,7 +81,7 @@ namespace MaaWpfGui.Services.Web
         {
             try
             {
-                var request = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Head, };
+                var request = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Head, Version = HttpVersion.Version20, };
 
                 if (extraHeader != null)
                 {
@@ -90,6 +90,8 @@ namespace MaaWpfGui.Services.Web
                         request.Headers.Add(kvp.Key, kvp.Value);
                     }
                 }
+
+                request.Headers.ConnectionClose = true;
 
                 var stopwatch = Stopwatch.StartNew();
                 var response = await _client.SendAsync(request).ConfigureAwait(false);
@@ -133,7 +135,7 @@ namespace MaaWpfGui.Services.Web
         {
             try
             {
-                var request = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Get, };
+                var request = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Get, Version = HttpVersion.Version20, };
 
                 if (extraHeader != null)
                 {
@@ -160,9 +162,45 @@ namespace MaaWpfGui.Services.Web
             try
             {
                 var body = JsonSerializer.Serialize(content);
-                var message = new HttpRequestMessage(HttpMethod.Post, uri);
+                var message = new HttpRequestMessage(HttpMethod.Post, uri) { Version = HttpVersion.Version20 };
+
+                if (extraHeader is not null)
+                {
+                    foreach (var header in extraHeader)
+                    {
+                        message.Headers.Add(header.Key, header.Value);
+                    }
+                }
+
                 message.Headers.Accept.ParseAdd("application/json");
                 message.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                var response = await _client.SendAsync(message);
+                response.Log();
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Failed to send POST request to {Uri}", uri);
+                return null;
+            }
+        }
+
+        public async Task<string?> PostAsFormUrlEncodedAsync(Uri uri, Dictionary<string, string?> content, Dictionary<string, string>? extraHeader = null)
+        {
+            try
+            {
+                var message = new HttpRequestMessage(HttpMethod.Post, uri) { Version = HttpVersion.Version20 };
+                message.Headers.Accept.ParseAdd("application/json");
+
+                if (extraHeader is not null)
+                {
+                    foreach (var header in extraHeader)
+                    {
+                        message.Headers.Add(header.Key, header.Value);
+                    }
+                }
+
+                message.Content = new FormUrlEncodedContent(content);
                 var response = await _client.SendAsync(message);
                 response.Log();
                 return await response.Content.ReadAsStringAsync();

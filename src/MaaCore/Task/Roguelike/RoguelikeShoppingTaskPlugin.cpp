@@ -22,7 +22,7 @@ bool asst::RoguelikeShoppingTaskPlugin::verify(AsstMsg msg, const json::value& d
     }
 
     if (details.get("details", "task", "").ends_with("Roguelike@TraderRandomShopping")) {
-        return m_config->get_mode() != RoguelikeMode::Investment;
+        return m_config->get_mode() != RoguelikeMode::Investment || m_config->get_invest_with_more_score();
     }
     else {
         return false;
@@ -30,6 +30,22 @@ bool asst::RoguelikeShoppingTaskPlugin::verify(AsstMsg msg, const json::value& d
 }
 
 bool asst::RoguelikeShoppingTaskPlugin::_run()
+{
+    LogTraceFunction;
+
+    buy_once();
+    const auto& theme = m_config->get_theme();
+    if ((theme == RoguelikeTheme::Sami || theme == RoguelikeTheme::Sarkaz) &&
+        m_config->get_mode() == RoguelikeMode::Exp) {
+        // 点击刷新
+        ProcessTask(*this, { theme + "@Roguelike@StageTraderRefresh" }).run();
+        buy_once();
+    }
+
+    return true;
+}
+
+bool asst::RoguelikeShoppingTaskPlugin::buy_once()
 {
     LogTraceFunction;
 
@@ -61,10 +77,12 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
         if (name == "阿米娅") {
             map_roles_count[battle::Role::Caster] += 1;
             map_roles_count[battle::Role::Warrior] += 1;
+            map_roles_count[battle::Role::Medic] += 1;
             if (elite == 1 && level == 70) {
                 total_wait_promotion += 1;
                 map_wait_promotion[battle::Role::Caster] += 1;
                 map_wait_promotion[battle::Role::Warrior] += 1;
+                map_wait_promotion[battle::Role::Medic] += 1;
             }
         }
         else {
@@ -94,7 +112,7 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
         }
     }
 
-    //bool bought = false;
+    // bool bought = false;
     auto& all_goods = RoguelikeShopping.get_goods(m_config->get_theme());
     std::vector<std::string> all_foldartal = m_config->get_theme() == RoguelikeTheme::Sami
                                                  ? Task.get<OcrTaskInfo>("Sami@Roguelike@FoldartalGainOcr")->text
@@ -104,6 +122,11 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
             return false;
         }
         if (no_longer_buy && !goods.ignore_no_longer_buy) {
+            continue;
+        }
+
+        // 在萨米肉鸽刷坍缩范式时不再购买会减少坍缩值的藏品
+        if (m_config->get_mode() == RoguelikeMode::CLP_PDS && goods.decrease_collapse) {
             continue;
         }
 
@@ -155,14 +178,13 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
             }
         }
 
-        // 这里仅点一下收藏品，原本的 ProcessTask 还会再点一下，但它是由 rect_move 的，保证不会点出去
-        // 即 ProcessTask 多点的那一下会点到不影响的地方
-        // 然后继续走 next 里确认 or 取消等等的逻辑
+        // 这里仅点一下收藏品，原本的 ProcessTask 还会再点一下，但它是由 rect_move
+        // 的，保证不会点出去 即 ProcessTask 多点的那一下会点到不影响的地方 然后继续走 next 里确认
+        // or 取消等等的逻辑
         Log.info("Ready to buy", goods.name);
         ctrler()->click(find_it->rect);
-        //bought = true;
+        // bought = true;
         if (m_config->get_theme() == RoguelikeTheme::Sami) {
-
             auto iter = std::find(all_foldartal.begin(), all_foldartal.end(), goods.name);
             if (iter != all_foldartal.end()) {
                 auto foldartal = m_config->get_foldartal();
@@ -171,6 +193,10 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
                 m_config->set_foldartal(std::move(foldartal));
             }
         }
+        std::vector<std::string> owned_collection = m_config->get_collection();
+        // 把goods.name存到已获得藏品里
+        owned_collection.emplace_back(goods.name);
+        m_config->set_collection(std::move(owned_collection));
         if (goods.no_longer_buy) {
             m_config->set_trader_no_longer_buy(true);
         }
@@ -178,9 +204,10 @@ bool asst::RoguelikeShoppingTaskPlugin::_run()
     }
     /*
     if (!bought) {
-        // 如果什么都没买，即使有商品，说明也是不需要买的，这里强制离开商店，后面让 ProcessTask 继续跑
-        return ProcessTask(*this, { "RoguelikeTraderShoppingOver" }).run();
+        // 如果什么都没买，即使有商品，说明也是不需要买的，这里强制离开商店，后面让 ProcessTask
+    继续跑 return ProcessTask(*this, { "RoguelikeTraderShoppingOver" }).run();
     }
     */
     return true;
 }
+

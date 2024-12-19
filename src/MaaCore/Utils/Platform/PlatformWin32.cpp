@@ -28,19 +28,30 @@ void asst::platform::aligned_free(void* ptr)
     _aligned_free(ptr);
 }
 
-bool asst::win32::CreateOverlappablePipe(HANDLE* read, HANDLE* write, SECURITY_ATTRIBUTES* secattr_read,
-                                         SECURITY_ATTRIBUTES* secattr_write, DWORD bufsize, bool overlapped_read,
-                                         bool overlapped_write)
+bool asst::win32::CreateOverlappablePipe(
+    HANDLE* read,
+    HANDLE* write,
+    SECURITY_ATTRIBUTES* secattr_read,
+    SECURITY_ATTRIBUTES* secattr_write,
+    DWORD bufsize,
+    bool overlapped_read,
+    bool overlapped_write)
 {
     static std::atomic<size_t> pipeid {};
     auto pipename = std::format(L"\\\\.\\pipe\\maa-pipe-{}-{}", GetCurrentProcessId(), pipeid++);
     DWORD read_flag = PIPE_ACCESS_INBOUND;
-    if (overlapped_read) read_flag |= FILE_FLAG_OVERLAPPED;
+    if (overlapped_read) {
+        read_flag |= FILE_FLAG_OVERLAPPED;
+    }
     DWORD write_flag = GENERIC_WRITE;
-    if (overlapped_write) write_flag |= FILE_FLAG_OVERLAPPED;
+    if (overlapped_write) {
+        write_flag |= FILE_FLAG_OVERLAPPED;
+    }
     auto pipe_read =
         CreateNamedPipeW(pipename.c_str(), read_flag, PIPE_TYPE_BYTE | PIPE_WAIT, 1, bufsize, bufsize, 0, secattr_read);
-    if (pipe_read == INVALID_HANDLE_VALUE) return false;
+    if (pipe_read == INVALID_HANDLE_VALUE) {
+        return false;
+    }
     auto pipe_write =
         CreateFileW(pipename.c_str(), write_flag, 0, secattr_write, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (pipe_write == INVALID_HANDLE_VALUE) {
@@ -58,10 +69,14 @@ static std::string get_ansi_short_path(const std::filesystem::path& path)
     wchar_t short_path[MAX_PATH] {};
     auto& osstr = path.native();
     auto shortlen = GetShortPathNameW(osstr.c_str(), short_path, MAX_PATH);
-    if (shortlen == 0) return {};
+    if (shortlen == 0) {
+        return {};
+    }
     BOOL failed = FALSE;
     auto ansilen = WideCharToMultiByte(CP_ACP, 0, short_path, shortlen, nullptr, 0, nullptr, &failed);
-    if (failed) return {};
+    if (failed) {
+        return {};
+    }
     std::string result(ansilen, 0);
     WideCharToMultiByte(CP_ACP, 0, short_path, shortlen, result.data(), ansilen, nullptr, nullptr);
     return result;
@@ -77,7 +92,9 @@ std::string asst::platform::path_to_crt_string(const std::filesystem::path& path
     if (err == 0) {
         std::string result(mbsize, 0);
         err = wcstombs_s(&mbsize, result.data(), mbsize, osstr.c_str(), osstr.size());
-        if (err != 0) return {};
+        if (err != 0) {
+            return {};
+        }
         return result.substr(0, mbsize - 1);
     }
     else {
@@ -128,10 +145,16 @@ std::string asst::platform::call_command(const std::string& cmdline, bool* exit_
 
     HANDLE pipe_parent_read = INVALID_HANDLE_VALUE, pipe_child_write = INVALID_HANDLE_VALUE;
     SECURITY_ATTRIBUTES sa_inherit { .nLength = sizeof(SECURITY_ATTRIBUTES), .bInheritHandle = TRUE };
-    if (!asst::win32::CreateOverlappablePipe(&pipe_parent_read, &pipe_child_write, nullptr, &sa_inherit, PipeBuffSize,
-                                             true, false)) {
+    if (!asst::win32::CreateOverlappablePipe(
+            &pipe_parent_read,
+            &pipe_child_write,
+            nullptr,
+            &sa_inherit,
+            PipeBuffSize,
+            true,
+            false)) {
         DWORD err = GetLastError();
-        asst::Log.error("CreateOverlappablePipe failed, err", err);
+        Log.error("CreateOverlappablePipe failed, err", err);
         return {};
     }
 
@@ -161,15 +184,31 @@ std::string asst::platform::call_command(const std::string& cmdline, bool* exit_
         Log.error("Call `", cmdline, "` InitializeProcThreadAttributeList failed, ret error code:", err);
         return {};
     }
-    attr_success = UpdateProcThreadAttribute(si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, &pipe_child_write, sizeof(HANDLE), nullptr, nullptr);
+    attr_success = UpdateProcThreadAttribute(
+        si.lpAttributeList,
+        0,
+        PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+        &pipe_child_write,
+        sizeof(HANDLE),
+        nullptr,
+        nullptr);
     if (!attr_success) {
         DWORD err = GetLastError();
         Log.error("Call `", cmdline, "` UpdateProcThreadAttribute failed, ret error code:", err);
         return {};
     }
     auto cmdline_osstr = to_osstring(cmdline);
-    BOOL create_ret =
-        CreateProcessW(nullptr, cmdline_osstr.data(), nullptr, nullptr, TRUE, EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, &si.StartupInfo, &process_info);
+    BOOL create_ret = CreateProcessW(
+        nullptr,
+        cmdline_osstr.data(),
+        nullptr,
+        nullptr,
+        TRUE,
+        EXTENDED_STARTUPINFO_PRESENT,
+        nullptr,
+        nullptr,
+        &si.StartupInfo,
+        &process_info);
     DeleteProcThreadAttributeList(si.lpAttributeList);
     if (!create_ret) {
         DWORD err = GetLastError();
@@ -189,9 +228,15 @@ std::string asst::platform::call_command(const std::string& cmdline, bool* exit_
 
     while (!(exit_flag && *exit_flag)) {
         wait_handles.clear();
-        if (process_running) wait_handles.push_back(process_info.hProcess);
-        if (!pipe_eof) wait_handles.push_back(pipeov.hEvent);
-        if (wait_handles.empty()) break;
+        if (process_running) {
+            wait_handles.push_back(process_info.hProcess);
+        }
+        if (!pipe_eof) {
+            wait_handles.push_back(pipeov.hEvent);
+        }
+        if (wait_handles.empty()) {
+            break;
+        }
         auto wait_result =
             WaitForMultipleObjectsEx((DWORD)wait_handles.size(), wait_handles.data(), FALSE, INFINITE, TRUE);
         HANDLE signaled_object = INVALID_HANDLE_VALUE;
@@ -257,7 +302,9 @@ struct REPARSE_DATA_BUFFER
     DWORD ReparseTag;
     WORD ReparseDataLength;
     WORD Reserved;
-    union {
+
+    union
+    {
         struct
         {
             WORD SubstituteNameOffset;
@@ -266,6 +313,7 @@ struct REPARSE_DATA_BUFFER
             WORD PrintNameLength;
             WCHAR PathBuffer[1];
         } SymbolicLinkReparseBuffer;
+
         struct
         {
             WORD SubstituteNameOffset;
@@ -274,6 +322,7 @@ struct REPARSE_DATA_BUFFER
             WORD PrintNameLength;
             WCHAR PathBuffer[1];
         } MountPointReparseBuffer;
+
         struct
         {
             BYTE DataBuffer[1];
@@ -297,8 +346,14 @@ HANDLE asst::win32::OpenDirectory(const std::filesystem::path& path, BOOL bReadW
 
     // Open the directory
     DWORD dwAccess = bReadWrite ? (GENERIC_READ | GENERIC_WRITE) : GENERIC_READ;
-    HANDLE hDir = CreateFileW(path.c_str(), dwAccess, 0, NULL, OPEN_EXISTING,
-                              FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE hDir = CreateFileW(
+        path.c_str(),
+        dwAccess,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+        NULL);
 
     return hDir;
 }
@@ -308,12 +363,16 @@ bool asst::win32::SetDirectoryReparsePoint(const std::filesystem::path& link, co
     auto normtarget = asst::platform::path(asst::utils::string_replace_all(target.native(), L"/", L"\\"));
 
     auto nttarget = L"\\GLOBAL??\\" + std::filesystem::absolute(normtarget).native();
-    if (nttarget.back() != L'\\') nttarget.push_back(L'\\');
+    if (nttarget.back() != L'\\') {
+        nttarget.push_back(L'\\');
+    }
 
     // set reparse point
     auto hReparsePoint = OpenDirectory(link.c_str(), TRUE);
 
-    if (hReparsePoint == INVALID_HANDLE_VALUE) return false;
+    if (hReparsePoint == INVALID_HANDLE_VALUE) {
+        return false;
+    }
 
     BYTE buf[sizeof(REPARSE_MOUNTPOINT_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR)];
     REPARSE_MOUNTPOINT_DATA_BUFFER& ReparseBuffer = (REPARSE_MOUNTPOINT_DATA_BUFFER&)buf;
@@ -327,9 +386,15 @@ bool asst::win32::SetDirectoryReparsePoint(const std::filesystem::path& link, co
     ReparseBuffer.ReparseDataLength = ReparseBuffer.ReparseTargetLength + 12;
 
     // Attach reparse point
-    auto success =
-        DeviceIoControl(hReparsePoint, FSCTL_SET_REPARSE_POINT, &ReparseBuffer,
-                        ReparseBuffer.ReparseDataLength + REPARSE_MOUNTPOINT_HEADER_SIZE, nullptr, 0, nullptr, nullptr);
+    auto success = DeviceIoControl(
+        hReparsePoint,
+        FSCTL_SET_REPARSE_POINT,
+        &ReparseBuffer,
+        ReparseBuffer.ReparseDataLength + REPARSE_MOUNTPOINT_HEADER_SIZE,
+        nullptr,
+        0,
+        nullptr,
+        nullptr);
 
     CloseHandle(hReparsePoint);
 

@@ -1,10 +1,12 @@
 # https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 # for clang-format 17.0.1
-Language: Json
-IndentWidth: 4
----
 Language: Cpp
-BasedOnStyle: 'WebKit'
+BasedOnStyle: "WebKit"
+# AccessModifierOffset: 2
+AlignAfterOpenBracket: "AlwaysBreak"
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
 # AlignConsecutiveShortCaseStatements: None
@@ -58,15 +60,15 @@ BraceWrapping:
 BreakAfterAttributes: Never
 BreakAfterJavaFieldAnnotations: true
 BreakArrays: true
-BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Custom
 BreakBeforeConceptDeclarations: Always
 BreakBeforeInlineASMColon: OnlyMultiline
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: BeforeComma
-BreakInheritanceList: BeforeComma
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
 BreakStringLiterals: true
-ColumnLimit: 100
+ColumnLimit: 120
 # CommentPragmas: '^ MEO pragma:'
 CompactNamespaces: false
 ConstructorInitializerIndentWidth: 4
@@ -82,12 +84,12 @@ FixNamespaceComments: true
 #   - foreach
 #   - Q_FOREACH
 #   - BOOST_FOREACH
-# IfMacros: 
+# IfMacros:
 #   - 'KJ_IF_MAYBE'
 IncludeBlocks: Preserve
 # IncludeCategories:
-# IncludeIsMainRegex: 
-# IncludeIsMainSourceRegex: 
+# IncludeIsMainRegex:
+# IncludeIsMainSourceRegex:
 IndentAccessModifiers: false
 IndentCaseBlocks: false
 IndentCaseLabels: false
@@ -125,7 +127,7 @@ NamespaceIndentation: None
 # ObjCSpaceAfterProperty:
 # ObjCSpaceBeforeProtocolList:
 PackConstructorInitializers: Never
-# PenaltyBreakAssignment: 
+# PenaltyBreakAssignment:
 # PenaltyBreakBeforeFirstCallParameter:
 # PenaltyBreakComment:
 # PenaltyBreakFirstLessLess:
@@ -135,13 +137,13 @@ PackConstructorInitializers: Never
 # PenaltyIndentedWhitespace:
 # PenaltyReturnTypeOnItsOwnLine:
 PointerAlignment: Left
-QualifierAlignment: Custom
-QualifierOrder:
-  - inline
-  - static
-  - const
-  - constexpr
-  - type
+# QualifierAlignment: Custom
+# QualifierOrder:
+#  - inline
+#  - static
+#  - const
+#  - constexpr
+#  - type
 ReferenceAlignment: Left
 ReflowComments: true
 RemoveBracesLLVM: false
@@ -149,7 +151,7 @@ RemoveParentheses: Leave
 RemoveSemicolon: false
 RequiresClausePosition: OwnLine
 RequiresExpressionIndentation: OuterScope
-SeparateDefinitionBlocks: Leave
+SeparateDefinitionBlocks: Always
 ShortNamespaceLines: 1000
 SortIncludes: CaseSensitive
 # SortJavaStaticImport:
@@ -178,7 +180,7 @@ SpacesInLineCommentPrefix:
 SpacesInParens: Never
 SpacesInSquareBrackets: false
 Standard: c++20
-# StatementAttributeLikeMacros: 
+# StatementAttributeLikeMacros:
 # StatementMacros:
 TabWidth: 4
 # TypeNames:

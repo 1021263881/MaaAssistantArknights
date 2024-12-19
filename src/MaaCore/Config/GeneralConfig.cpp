@@ -3,6 +3,13 @@
 #include "Utils/Logger.hpp"
 #include <meojson/json.hpp>
 
+void asst::GeneralConfig::set_connection_extras(const std::string& name, const json::object& extras)
+{
+    LogInfo << name << extras;
+
+    m_adb_cfg[name].extras = extras;
+}
+
 bool asst::GeneralConfig::parse(const json::value& json)
 {
     LogTraceFunction;
@@ -12,6 +19,9 @@ bool asst::GeneralConfig::parse(const json::value& json)
     {
         const json::value& options_json = json.at("options");
         m_options.task_delay = options_json.at("taskDelay").as_integer();
+        m_options.sss_fight_screencap_interval = options_json.at("SSSFightScreencapInterval").as_integer();
+        m_options.roguelike_fight_screencap_interval = options_json.at("RoguelikeFightScreencapInterval").as_integer();
+        m_options.copilot_fight_screencap_interval = options_json.at("CopilotFightScreencapInterval").as_integer();
         m_options.control_delay_lower = options_json.at("controlDelayRange")[0].as_integer();
         m_options.control_delay_upper = options_json.at("controlDelayRange")[1].as_integer();
         // m_options.print_window = options_json.at("printWindow").as_boolean();
@@ -54,19 +64,21 @@ bool asst::GeneralConfig::parse(const json::value& json)
         }
         m_options.depot_export_template.ark_planner =
             options_json.get("depotExportTemplate", "arkPlanner", std::string());
-        m_options.debug.clean_files_freq = options_json.get("debug", "cleanFilesFreq", 100);
-        m_options.debug.max_debug_file_num = options_json.get("debug", "maxDebugFileNum", 1000);
+        m_options.debug.clean_files_freq = options_json.get("debug", "cleanFilesFreq", 50);
+        m_options.debug.max_debug_file_num = options_json.get("debug", "maxDebugFileNum", 100);
     }
 
-    for (const auto& [client_type, intent_name] : json.at("intent").as_object()) {
-        m_intent_name[client_type] = intent_name.as_string();
+    for (const auto& [client_type, package_name] : json.at("packageName").as_object()) {
+        m_package_name[client_type] = package_name.as_string();
     }
 
     for (const auto& cfg_json : json.at("connection").as_array()) {
         std::string base_name = cfg_json.get("baseConfig", std::string());
         const AdbCfg& base_cfg = base_name.empty() ? AdbCfg() : m_adb_cfg.at(base_name);
 
-        AdbCfg adb;
+        AdbCfg& adb = m_adb_cfg[cfg_json.at("configName").as_string()];
+        adb.devices = cfg_json.get("devices", base_cfg.devices);
+        adb.address_regex = cfg_json.get("addressRegex", base_cfg.address_regex);
         adb.connect = cfg_json.get("connect", base_cfg.connect);
         adb.display_id = cfg_json.get("displayId", base_cfg.display_id);
         adb.uuid = cfg_json.get("uuid", base_cfg.uuid);
@@ -82,14 +94,13 @@ bool asst::GeneralConfig::parse(const json::value& json)
         adb.start = cfg_json.get("start", base_cfg.start);
         adb.stop = cfg_json.get("stop", base_cfg.stop);
         adb.abilist = cfg_json.get("abilist", base_cfg.abilist);
+        adb.version = cfg_json.get("version", base_cfg.version);
         adb.orientation = cfg_json.get("orientation", base_cfg.orientation);
         adb.push_minitouch = cfg_json.get("pushMinitouch", base_cfg.push_minitouch);
         adb.chmod_minitouch = cfg_json.get("chmodMinitouch", base_cfg.chmod_minitouch);
         adb.call_minitouch = cfg_json.get("callMinitouch", base_cfg.call_minitouch);
         adb.call_maatouch = cfg_json.get("callMaatouch", base_cfg.call_maatouch);
         adb.back_to_home = cfg_json.get("back_to_home", base_cfg.back_to_home);
-
-        m_adb_cfg[cfg_json.at("configName").as_string()] = std::move(adb);
     }
 
     return true;

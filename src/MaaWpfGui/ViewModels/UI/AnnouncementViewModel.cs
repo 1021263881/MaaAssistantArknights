@@ -3,7 +3,7 @@
 // Copyright (C) 2021 MistEO and Contributors
 //
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License v3.0 only as published by
 // the Free Software Foundation, either version 3 of the License, or
 // any later version.
 //
@@ -12,6 +12,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using MaaWpfGui.Configuration;
 using MaaWpfGui.Constants;
 using MaaWpfGui.Helper;
 using Stylet;
@@ -25,7 +26,7 @@ namespace MaaWpfGui.ViewModels.UI
     // ReSharper disable once ClassNeverInstantiated.Global
     public class AnnouncementViewModel : Screen
     {
-        private string _announcementInfo = ConfigurationHelper.GetValue(ConfigurationKeys.AnnouncementInfo, string.Empty);
+        private string _announcementInfo = ConfigFactory.Root.AnnouncementInfo.Info;
 
         /// <summary>
         /// Gets the announcement info.
@@ -37,11 +38,11 @@ namespace MaaWpfGui.ViewModels.UI
             private set
             {
                 SetAndNotify(ref _announcementInfo, value);
-                ConfigurationHelper.SetValue(ConfigurationKeys.AnnouncementInfo, value);
+                ConfigFactory.Root.AnnouncementInfo.Info = value;
             }
         }
 
-        private bool _doNotRemindThisAnnouncementAgain = bool.Parse(ConfigurationHelper.GetValue(ConfigurationKeys.DoNotRemindThisAnnouncementAgain, false.ToString()));
+        private bool _doNotRemindThisAnnouncementAgain = ConfigFactory.Root.AnnouncementInfo.DoNotShowAgain;
 
         public bool DoNotRemindThisAnnouncementAgain
         {
@@ -49,7 +50,22 @@ namespace MaaWpfGui.ViewModels.UI
             set
             {
                 SetAndNotify(ref _doNotRemindThisAnnouncementAgain, value);
-                ConfigurationHelper.SetValue(ConfigurationKeys.DoNotRemindThisAnnouncementAgain, value.ToString());
+                ConfigFactory.Root.AnnouncementInfo.DoNotShowAgain = value;
+            }
+        }
+
+        private bool _doNotShowAnnouncement = ConfigFactory.Root.AnnouncementInfo.DoNotShow;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to show the update.
+        /// </summary>
+        public bool DoNotShowAnnouncement
+        {
+            get => _doNotShowAnnouncement;
+            set
+            {
+                SetAndNotify(ref _doNotShowAnnouncement, value);
+                ConfigFactory.Root.AnnouncementInfo.DoNotShow = value;
             }
         }
 

@@ -111,7 +111,7 @@ AsstBool AsstSetInstanceOption(AsstHandle handle, AsstInstanceOptionKey key, con
 AsstBool AsstConnect(AsstHandle handle, const char* adb_path, const char* address, const char* config)
 {
     if (!inited() || handle == nullptr) {
-        asst::Log.error(__FUNCTION__, "Cannot connect to device, asst not inited or handle is null", inited(), handle);
+        Log.error(__FUNCTION__, "Cannot connect to device, asst not inited or handle is null", inited(), handle);
         return AsstFalse;
     }
 
@@ -163,13 +163,24 @@ AsstBool ASSTAPI AsstBackToHome(AsstHandle handle)
     return handle->back_to_home() ? AsstTrue : AsstFalse;
 }
 
-AsstAsyncCallId AsstAsyncConnect(AsstHandle handle, const char* adb_path, const char* address, const char* config,
-                                 AsstBool block)
+AsstAsyncCallId
+    AsstAsyncConnect(AsstHandle handle, const char* adb_path, const char* address, const char* config, AsstBool block)
 {
     if (!inited() || handle == nullptr) {
         return InvalidId;
     }
     return handle->async_connect(adb_path, address, config ? config : std::string(), block);
+}
+
+void AsstSetConnectionExtras(const char* name, const char* extras)
+{
+    auto jopt = json::parse(extras);
+    if (!jopt) {
+        LogError << "failed to parse json" << extras;
+        return;
+    }
+
+    asst::ResourceLoader::get_instance().set_connection_extras(name, jopt->as_object());
 }
 
 AsstTaskId AsstAppendTask(AsstHandle handle, const char* type, const char* params)
@@ -264,5 +275,5 @@ void AsstLog(const char* level, const char* message)
         std::cerr << __FUNCTION__ << " | User Dir not set" << std::endl;
         return;
     }
-    asst::Log.log(asst::Logger::level(level), message);
+    Log.log(asst::Logger::level(level), message);
 }

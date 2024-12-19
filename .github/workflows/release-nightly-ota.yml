@@ -11,16 +11,18 @@ on:
         description: "Commit to build (git checkout)"
         type: string
         required: false
-      limit:
+      limit_maa:
         description: "Number of releases to fetch from MaaAssistantArknights"
         required: true
-        default: 30
+        default: "10"
         type: number
-      limit_2:
+      limit_mr:
         description: "Number of releases to fetch from MaaRelease"
         required: true
-        default: 30
+        default: "10"
         type: number
+  schedule:
+    - cron: "0 22 * * *" # Runs daily at 00:00 UTC
 
 jobs:
   build-win-nightly:
@@ -37,6 +39,7 @@ jobs:
       tag: ${{ steps.set_tag.outputs.tag }}
       pre_version: ${{ steps.set_tag.outputs.pre_version }}
       main_tag_name: ${{ steps.push_main_tag.outputs.main_tag_name }}
+      changelog: ${{ steps.read_changelog.outputs.content }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,6 +48,18 @@ jobs:
           #ref: ${{ inputs.ref }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for changes in dev branch
+        id: check_changes
+        run: |
+          if (git diff --quiet HEAD origin/${{ github.ref_name }}) {
+            echo "No changes in dev branch. Cancelling workflow."
+            echo "cancel_run=true" >> $GITHUB_ENV
+          }
+
+      - name: Stop if no changes
+        if: env.cancel_run == 'true'
+        uses: andymckay/cancel-action@0.5
 
       - name: Checkout ref
         run: |
@@ -59,6 +74,9 @@ jobs:
       - name: Set tag
         id: set_tag
         run: |
+          # pre_version是上一个公版，这里需要拉上一个tag，避免堆积过多commit
+          $latest_tag=$(git describe --tags --abbrev=0)
+          echo "latest_tag=$latest_tag" >> $env:GITHUB_OUTPUT
           $described = $(git describe --tags --long --match 'v*')
           $ids = $($described -split "-")
           if ($ids.length -eq 3) {
@@ -71,9 +89,9 @@ jobs:
           }
           if ($ids.length -eq 4) {
             $dist = `printf "%03d"` $ids[2]
-            $pre_version = "$($ids[0])""-""$($ids[1])"
-            echo "tag=$($ids[0])-$($ids[1]).d$($dist).$($ids[3])" >> $env:GITHUB_OUTPUT
+            $pre_version = "$($ids[0])-$($ids[1])"
             echo "pre_version=$pre_version" >> $env:GITHUB_OUTPUT
+            echo "tag=$pre_version.d$($dist).$($ids[3])" >> $env:GITHUB_OUTPUT
             exit 0
           }
           exit 1
@@ -89,6 +107,21 @@ jobs:
           git push --tags origin HEAD:refs/tags/$main_tag_name -f
           echo "main_tag_name=$main_tag_name" >> $env:GITHUB_OUTPUT
 
+      - name: Generate Changelog
+        id: generate_changelog
+        run: |
+          python3 tools/ChangelogGenerator/changelog_generator.py --latest "${{ steps.set_tag.outputs.latest_tag }}" --tag "${{ steps.set_tag.outputs.tag }}"
+          Get-Content .\changelog.md | Select-Object -Skip 2 | Out-File -FilePath changelog_notag.md -Encoding utf8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONIOENCODING: "utf-8"
+
+      - name: Read Changelog to variable
+        id: read_changelog
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./changelog_notag.md
+
       - name: Cache .nuke/temp, ~/.nuget/packages
         id: cache-nuget
         uses: actions/cache@v4
@@ -97,7 +130,7 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj') }}
-  
+
       - name: Restore dependencies
         if: steps.cache-nuget.outputs.cache-hit != 'true'
         run: dotnet restore
@@ -197,8 +230,17 @@ jobs:
         run: |
           mkdir -pv build-ota && cd build-ota
 
-          gh release list --repo 'MaaAssistantArknights/MaaAssistantArknights' --limit ${{ inputs.limit || 30 }} | tee ./release_maa.txt
-          gh release list --repo "${{ github.repository_owner }}/MaaRelease" --limit ${{ inputs.limit_2 || 30 }} | tee ./release_mr.txt
+          # Convert inputs to integers
+          limit_maa=${{ inputs.limit_maa || 10 }}
+          limit_maa=${limit_maa%.*}
+          echo "Parsed limit_maa: $limit_maa"
+
+          limit_mr=${{ inputs.limit_mr || 10 }}
+          limit_mr=${limit_mr%.*}
+          echo "Parsed limit_mr: $limit_mr"
+
+          gh release list --repo 'MaaAssistantArknights/MaaAssistantArknights' --limit $limit_maa | tee ./release_maa.txt
+          gh release list --repo "${{ github.repository_owner }}/MaaRelease" --limit $limit_mr | tee ./release_mr.txt
           echo ${{ needs.build-win-nightly.outputs.tag }} > ./config
 
           cat ./release_maa.txt | awk '{ print $1 }' > ./tags_maa.txt
@@ -227,22 +269,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Make release body
-        id: make_release_body
-        shell: bash
-        run: |
-          pre_version=${{ needs.build-win-nightly.outputs.pre_version }}
-          cur_version=${{ needs.build-win-nightly.outputs.main_tag_name }}
-          echo -e "${{ inputs.release_body || '' }}\n\n**Full Changelog**: [$pre_version -> $cur_version](https://github.com/$GITHUB_REPOSITORY/compare/$pre_version...$cur_version)" > alpha_changelog.md
-          export r=$(cat alpha_changelog.md)
-
-          # https://github.com/svenstaro/upload-release-action
-          r="${r//'%'/'%25'}"                               # Multiline escape sequences for %
-          r="${r//$'\n'/'%0A'}"                             # Multiline escape sequences for '\n'
-          r="${r//$'\r'/'%0D'}"                             # Multiline escape sequences for '\r'
-          echo $r
-          echo "full_release_body=$r" >> $GITHUB_OUTPUT
-
       - name: Upload to MaaRelease
         uses: svenstaro/upload-release-action@v2
         with:
@@ -253,7 +279,12 @@ jobs:
           tag: ${{ env.release_tag }}
           prerelease: true
           overwrite: true
-          body: ${{ steps.make_release_body.outputs.full_release_body }}
+          body: |
+            ${{ inputs.release_body || '' }}
+
+            ${{ needs.build-win-nightly.outputs.changelog }}
+
+            **Full Changelog**: [${{ needs.build-win-nightly.outputs.pre_version }} -> ${{ needs.build-win-nightly.outputs.main_tag_name }}](https://github.com/${{ github.repository }}/compare/${{ needs.build-win-nightly.outputs.pre_version }}...${{ needs.build-win-nightly.outputs.main_tag_name }})
 
       - name: Setup release mirror
         run: |

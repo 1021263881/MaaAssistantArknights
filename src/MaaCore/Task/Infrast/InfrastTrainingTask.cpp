@@ -23,7 +23,9 @@ bool asst::InfrastTrainingTask::_run()
     }
     enter_facility();
 
-    if (!analyze_status()) return false;
+    if (!analyze_status()) {
+        return false;
+    }
 
     if (m_continue_training && m_level != 3) {
         click_bottom_left_tab();
@@ -53,28 +55,26 @@ bool asst::InfrastTrainingTask::analyze_status()
         return true;
     }
 
+    const auto& replace_map = Task.get<OcrTaskInfo>("CharsNameOcrReplace")->replace_map;
+    auto task_replace = Task.get<OcrTaskInfo>("InfrastTrainingOperatorAndSkill")->replace_map;
+    ranges::copy(replace_map, std::back_inserter(task_replace));
     RegionOCRer rec_analyzer(image);
     rec_analyzer.set_task_info("InfrastTrainingOperatorAndSkill");
+    rec_analyzer.set_replace(task_replace);
     if (!rec_analyzer.analyze()) {
         Log.error(__FUNCTION__, "recognition failed");
         return false;
     }
 
     std::string raw_str = rec_analyzer.get_result().text;
-    size_t separation_pos = raw_str.find(']');
+    size_t separation_pos = raw_str.find('\n');
     if (separation_pos == std::string::npos) {
         Log.error(__FUNCTION__, "separate string failed");
         return false;
     }
 
-    // ']'前为干员名，']'后为技能名s
+    // '\n'前为干员名，'\n'后为技能名
     m_operator_name = raw_str.substr(0, separation_pos);
-    for (const auto& replace_map = Task.get<OcrTaskInfo>("CharsNameOcrReplace")->replace_map;
-         const auto& [regex, new_str] : replace_map) {
-        if (std::regex_search(m_operator_name, std::regex(regex))) {
-            m_operator_name = new_str;
-        }
-    }
     m_skill_name = raw_str.substr(separation_pos + 1, raw_str.length() - separation_pos + 1);
 
     // TODO: 根据角色职业增加换班功能
@@ -98,7 +98,9 @@ bool asst::InfrastTrainingTask::analyze_status()
 
     m_continue_training = false;
 
-    if (!time_left_analyze(image)) return false;
+    if (!time_left_analyze(image)) {
+        return false;
+    }
 
     {
         json::value cb_info = basic_info_with_what("InfrastTrainingTimeLeft");
@@ -122,7 +124,9 @@ bool asst::InfrastTrainingTask::level_analyze(cv::Mat image)
         std::string level_temp_name = task_name + std::to_string(i) + ".png";
         analyzer.append_templ(level_temp_name);
     }
-    if (!analyzer.analyze()) return false;
+    if (!analyzer.analyze()) {
+        return false;
+    }
     const auto& res = analyzer.get_result();
     utils::chars_to_number(res.templ_info.name.substr(task_name.size(), 1), m_level);
     Log.info(__FUNCTION__, "level has been set to ", m_level);
@@ -145,7 +149,9 @@ bool asst::InfrastTrainingTask::time_left_analyze(cv::Mat image)
 
     for (int i = 0; i < 3; ++i) {
         progress_analyzer.set_task_info("InfrastTrainingTimeRec" + std::to_string(i));
-        if (!progress_analyzer.analyze()) return false;
+        if (!progress_analyzer.analyze()) {
+            return false;
+        }
 
         std::string raw_str = progress_analyzer.get_result().text;
         Log.info(__FUNCTION__, raw_str);
@@ -181,7 +187,11 @@ bool asst::InfrastTrainingTask::continue_train(int index)
 int asst::InfrastTrainingTask::skill_index_from_rect(const Rect& r)
 {
     int cy = r.y + r.height / 2;
-    if (cy <= 300) return 1;
-    if (cy <= 500) return 2;
+    if (cy <= 300) {
+        return 1;
+    }
+    if (cy <= 500) {
+        return 2;
+    }
     return 3;
 }

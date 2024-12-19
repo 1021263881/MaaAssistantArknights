@@ -8,9 +8,13 @@
 using asio::ip::tcp;
 namespace socket_ops = asio::detail::socket_ops;
 
-asst::PlayToolsController::PlayToolsController(const AsstCallback& callback, Assistant* inst,
-                                               PlatformType type [[maybe_unused]])
-    : InstHelper(inst), m_callback(callback), m_socket(m_context)
+asst::PlayToolsController::PlayToolsController(
+    const AsstCallback& callback,
+    Assistant* inst,
+    PlatformType type [[maybe_unused]]) :
+    InstHelper(inst),
+    m_callback(callback),
+    m_socket(m_context)
 {
     LogTraceFunction;
 }
@@ -20,8 +24,10 @@ asst::PlayToolsController::~PlayToolsController()
     close();
 }
 
-bool asst::PlayToolsController::connect(const std::string& adb_path [[maybe_unused]], const std::string& address,
-                                        const std::string& config [[maybe_unused]])
+bool asst::PlayToolsController::connect(
+    const std::string& adb_path [[maybe_unused]],
+    const std::string& address,
+    const std::string& config [[maybe_unused]])
 {
     if (m_address != address) {
         close();
@@ -40,6 +46,16 @@ const std::string& asst::PlayToolsController::get_uuid() const
 {
     const static std::string uuid("com.hypergryph.arknights");
     return uuid;
+}
+
+size_t asst::PlayToolsController::get_pipe_data_size() const noexcept
+{
+    return size_t();
+}
+
+size_t asst::PlayToolsController::get_version() const noexcept
+{
+    return size_t();
 }
 
 bool asst::PlayToolsController::screencap(cv::Mat& image_payload, bool allow_reconnect [[maybe_unused]])
@@ -84,7 +100,7 @@ bool asst::PlayToolsController::start_game(const std::string& client_type [[mayb
     return true;
 }
 
-bool asst::PlayToolsController::stop_game()
+bool asst::PlayToolsController::stop_game(const std::string& client_type [[maybe_unused]])
 {
     try {
         constexpr char request[6] = { 0, 4, 'T', 'E', 'R', 'M' };
@@ -100,11 +116,18 @@ bool asst::PlayToolsController::stop_game()
 
 bool asst::PlayToolsController::click(const Point& p)
 {
+    Log.trace("PlayTools click:", p);
     return toucher_down(p) && toucher_up(p);
 }
 
-bool asst::PlayToolsController::swipe(const Point& p1, const Point& p2, int duration, bool extra_swipe, double slope_in,
-                                      double slope_out, bool with_pause [[maybe_unused]])
+bool asst::PlayToolsController::swipe(
+    const Point& p1,
+    const Point& p2,
+    int duration,
+    bool extra_swipe,
+    double slope_in,
+    double slope_out,
+    bool with_pause [[maybe_unused]])
 {
     int x1 = p1.x, y1 = p1.y;
     int x2 = p2.x, y2 = p2.y;
@@ -118,6 +141,8 @@ bool asst::PlayToolsController::swipe(const Point& p1, const Point& p2, int dura
         x1 = std::clamp(x1, 0, width - 1);
         y1 = std::clamp(y1, 0, height - 1);
     }
+
+    Log.trace("PlayTools swipe", p1, p2, duration, extra_swipe, slope_in, slope_out);
 
     toucher_down(p1);
 

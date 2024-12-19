@@ -3,7 +3,7 @@
 // Copyright (C) 2021 MistEO and Contributors
 //
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License v3.0 only as published by
 // the Free Software Foundation, either version 3 of the License, or
 // any later version.
 //
@@ -58,6 +58,16 @@ namespace MaaWpfGui.Constants
         /// The recommended color for file downloading or downloaded or download failed.
         /// </summary>
         public const string Download = "DownloadLogBrush";
+
+        /// <summary>
+        /// The recommended color for MuMu special screenshot.
+        /// </summary>
+        public const string MuMuSpecialScreenshot = "MuMuSpecialScreenshot";
+
+        /// <summary>
+        /// The recommended color for LD special screenshot.
+        /// </summary>
+        public const string LdSpecialScreenshot = "LdSpecialScreenshot";
 
         // 颜色在MaaWpfGui\Res\Themes中定义
         // Brush are defined in MaaWpfGui\Res\Themes
